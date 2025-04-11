@@ -1,18 +1,22 @@
 import { createUser, findUserByEmail, findUserByEmailOrUsername } from "../services/auth.service.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { comparePassword } from "../utils/comparePassword.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateAccessAndRefreshToken.js";
 import { hashPassword } from "../utils/hashPassword.js";
 
 // Register User
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   const { fullName, username, email, password } = req.body;
 
   try {
 
+    // find the user if exist
     const user = await findUserByEmailOrUsername(email, username);
 
     if(user) {
-        return res.status(401).json("User with email or username already exists");
+        // return res.status(401).json("User with email or username already exists");
+        throw new ApiError(401, "User with email or username already exists");
     }
 
     // hash the password
@@ -21,25 +25,29 @@ export const registerUser = async (req, res) => {
     // create the user
     const newUser = await createUser(fullName, username, email, hashedPassword);
 
-    return res.status(200).json(newUser);
+    const response = new ApiResponse(200, "User registered successfully", newUser);
+    return res.status(200).json(response);
 
   } catch (error) {
-    console.log("error: ", error);
-    return res.status(500).json("Internal Server Error");
+    console.log("register controller error: ", error);
+    // return res.status(500).json("Internal Server Error");
+    next(error);
   }
 };
 
 
 // Login User
-export const loginUser = async (req, res) => {
+export const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
   
     try {
   
+      // find the user by email if exist
       const user = await findUserByEmail(email);
   
       if(!user) {
-        return res.status(401).json("User with email or username does not exist");
+        // return res.status(401).json("User with email or username does not exist");
+        throw new ApiError(401, "User with email or username does not exist");
       }
   
       // compare the password
@@ -47,7 +55,8 @@ export const loginUser = async (req, res) => {
 
   
       if(!isMatch) {
-        return res.status(401).json("Invalid Credentials");
+        // return res.status(401).json("Invalid Credentials");
+        throw new ApiError(401, "Invalid Credentials");
       }
 
       const accessToken = generateAccessToken(user._id, user.fullName, user.username, user.email);
@@ -56,18 +65,78 @@ export const loginUser = async (req, res) => {
       user.refreshToken = refreshToken;
       await user.save();
 
+      // No — you do not need cookie-parser to send cookies.
+      // Cookie-parser is for reading cookies from incoming requests. like
+      // const token = req.cookies.accessToken;
+      // Now you need to use cookie-parser, because Express does not parse cookies by default.
+
+      /*
+      how to use
+      -----------
+      import cookieParser from 'cookie-parser';
+      app.use(cookieParser());
+
+      */
+
+      /*
+      When you are setting cookies using:
+      res.cookie("accessToken", accessToken, options);
+
+      Express handles this natively. You don’t need cookie-parser for this.
+
+      */
+
       const cookieOptions = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: "strict",
       }
 
-      res.cookie("accessToken", accessToken, cookieOptions);
-      res.cookie("refreshToken", refreshToken, cookieOptions);
+      res.cookie("accessToken", accessToken, {...cookieOptions, maxAge: 15 * 60 * 1000 }); // 15 minutes
+      res.cookie("refreshToken", refreshToken, {...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000}); // 7 days
 
-      return res.status(200).json({ message: "Logged in Successfully", accessToken: accessToken, refreshToken: refreshToken});
+
+      const response = new ApiResponse(200, "Logged in Successfully", {accessToken, refreshToken});
+      return res.status(200).json(response);
+      
+      // return res.status(200).json({ message: "Logged in Successfully", accessToken: accessToken, refreshToken: refreshToken});
   
     } catch (error) {
-      console.log("error: ", error);
-      return res.status(500).json("Internal Server Error");
+      console.log("login controller error: ", error);
+      // return res.status(500).json("Internal Server Error");
+      next(error);
     }
   };
+
+
+// Logout User
+export const logoutUser = async (req, res) => {
+
+  // to read cookies we need to use cookie-parser in app.js as middleware
+        /*
+      how to use
+      -----------
+      import cookieParser from 'cookie-parser';
+      app.use(cookieParser());
+
+      */
+
+  const refreshToken = req.cookies.refreshToken;
+  
+  console.log("refreshToken: ", refreshToken);
+
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+  
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+  });
+  
+  return res.status(200).json({ message: "Logged out successfully" });
+
+}
