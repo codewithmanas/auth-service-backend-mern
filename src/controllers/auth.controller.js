@@ -64,8 +64,13 @@ export const loginUser = async (req, res, next) => {
   
       if(!user) {
         // return res.status(401).json("User with email or username does not exist");
-        throw new ApiError(401, "User with email or username does not exist");
+        throw new ApiError(401, "User with email does not exist");
       }
+
+      if (!user.emailVerified) {
+        throw new ApiError(401, "Please verify your email before logging in");
+      }
+      
   
       // compare the password
       const isMatch = await comparePassword(password, user.password);
