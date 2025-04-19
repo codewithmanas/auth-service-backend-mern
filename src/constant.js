@@ -1,2 +1,2 @@
 export const DB_NAME = "auth-service-db";
-export const BASE_URL = "";
+export const FRONTEND_BASE_URL = "http://localhost:5173";

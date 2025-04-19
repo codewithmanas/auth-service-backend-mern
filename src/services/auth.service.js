@@ -15,7 +15,7 @@ export const findUserByEmail = async (email) => {
 // export const createUser = async (fullName, username, email, hashedPassword) => {
 //     const newUser = await User.create({
 //         fullName,
-//         username: username ? username?.toLowerCase() : null,
+//         username,
 //         email,
 //         password: hashedPassword,
 //       });

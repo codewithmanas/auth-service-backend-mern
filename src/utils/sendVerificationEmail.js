@@ -1,55 +1,45 @@
-import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { transporter } from "../configs/mailHandler.js";
 dotenv.config({ path: "./.env.local" });
+import { transporter } from "../configs/mailHandler.js";
+import { FRONTEND_BASE_URL } from "../constant.js";
+import jwt from "jsonwebtoken";
 
-if(!process.env.SMTP_HOST) {
-    throw new Error("SMTP_HOST is not set");
+if (!process.env.EMAIL_VERIFICATION_SECRET) {
+  throw new Error("EMAIL_VERIFICATION_SECRET is not set");
 }
-
-if(!process.env.SMTP_USER) {
-    throw new Error("SMTP_USER is not set");
-}
-
 
 export const sendVerificationEmail = async (email, id) => {
+  const token = jwt.sign(
+    { id: id },
+    process.env.EMAIL_VERIFICATION_SECRET,
+    { expiresIn: "15m" } // short lifespan for security
+  );
 
-        const  verificationLink = `http://localhost:8001/verify-otp/?userid=${id}`;
-        const verificationOTP = "123456";
+  // temporary approach
+  const verificationLink = `${FRONTEND_BASE_URL}/verify-email/?token=${token}`;
+  // const verificationOTP = "123456";
 
-        // const mailOptions = {
-        //     from: process.env.SMTP_USER,
-        //     to: email,
-        //     subject: "Email Verification",
-        //     text: `Please click the link to verify your email: http://localhost:8001/verify/${id}`,
-        // }
-        const mailOptions = {
-            from: process.env.SMTP_USER,
-            to: email,
-            subject: "Complete your registration",
-            // text: "Welcome to SkillEx",
-            // html: "<p>Your email address has been registered with SkillEx. To validate your account, please complete your profile by clicking the link below:</p><p><a href='http://localhost:5173/verify-otp/?userid=${id}'>Verify Email</a></p>",
-            html: `"Welcome to SkillEx" <p> Please, verify using OTP: ${verificationOTP}</p>`
-          };
-
+  const mailOptions = {
+    from: '"YourApp" <no-reply@yourapp.com>', // this will be replaced with your email provider "SMTP_USER"
+    to: email,
+    subject: "Verify your email",
+    html: `<p>Click the link to verify your email:</p>
+                 <a href="${verificationLink}">Verify Email</a>`,
+  };
 
 
+  // not recommended for production
+  try {
+    await transporter.verify();
+    console.log("SMTP connection successful");
 
-        try {
-            await transporter.verify();
-            console.log('SMTP connection successful');
-          } catch (error) {
-            console.error('SMTP connection failed', error);
-          }
+    await transporter.sendMail(mailOptions);
 
-    
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log("Error sending email: ", error);
-            } else {
-                console.log("Email sent: ", info.response);
-            }
-        });
+    console.log("Successfully sent verification email");
+    return true;
 
-        return true;
-}
+  } catch (error) {
+    console.error("SMTP connection failed", error);
+    return false;
+  }
+};
