@@ -4,28 +4,45 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { comparePassword } from "../utils/comparePassword.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateAccessAndRefreshToken.js";
 import { hashPassword } from "../utils/hashPassword.js";
+import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 
 // Register User
 export const registerUser = async (req, res, next) => {
-  const { fullName, username, email, password } = req.body;
+  // const { fullName, username, email, password } = req.body;
+  const { fullName, email, password } = req.body;
+
+  console.log("register controller: ", req.body);
 
   try {
 
     // find the user if exist
-    const user = await findUserByEmailOrUsername(email, username);
+    const user = await findUserByEmail(email);
 
     if(user) {
         // return res.status(401).json("User with email or username already exists");
-        throw new ApiError(401, "User with email or username already exists");
+        throw new ApiError(401, "User with email already exists");
     }
 
     // hash the password
     const hashedPassword = await hashPassword(password);
 
     // create the user
-    const newUser = await createUser(fullName, username, email, hashedPassword);
+    // const newUser = await createUser(fullName, username, email, hashedPassword);
+    const newUser = await createUser(fullName, email, hashedPassword);
 
-    const response = new ApiResponse(200, "User registered successfully", newUser);
+    // send verification email
+    const mailResult = await sendVerificationEmail(newUser.email, newUser._id);
+
+    if(!mailResult) {
+        return res.status(500).json("Failed to send verification email");
+    }
+
+    const safeUser = {
+      fullName: newUser.fullName,
+      email: newUser.email,
+    }
+
+    const response = new ApiResponse(200, "User registered successfully", safeUser);
     return res.status(200).json(response);
 
   } catch (error) {

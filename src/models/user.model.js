@@ -8,16 +8,15 @@ const userSchema = new Schema(
     },
     username: {
       type: String,
-      required: true,
-      unique: true,
-      match: /^[a-zA-Z0-9_]+$/,
+      // required: true,
+      // match: /^[a-zA-Z0-9_]+$/,
     },
     email: {
       type: String,
       required: true,
       lowercase: true,
       unique: true,
-      match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+      // match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
     },
     password: {
       type: String,

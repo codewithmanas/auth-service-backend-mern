@@ -7,9 +7,15 @@ import { globalErrorHandler } from "./middlewares/globalErrorHandler.middleware.
 const app = express();
 
 // middlewares
+// app.use(
+//   cors({
+//     origin: "http://localhost:5173",
+//     credentials: true,
+//   })
+// );
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "*",
     credentials: true,
   })
 );
