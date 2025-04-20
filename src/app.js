@@ -3,13 +3,14 @@ import { authRoute } from "./routes/index.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { globalErrorHandler } from "./middlewares/globalErrorHandler.middleware.js";
+import { FRONTEND_BASE_URL } from "./constant.js";
 
 const app = express();
 
 // middlewares
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: FRONTEND_BASE_URL,
     credentials: true,
   })
 );
