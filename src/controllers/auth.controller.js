@@ -8,6 +8,7 @@ import {
   generateRefreshToken,
 } from "../utils/generateAccessAndRefreshToken.js";
 import { hashPassword } from "../utils/hashPassword.js";
+import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 import jwt from "jsonwebtoken";
 
@@ -189,6 +190,66 @@ export const loginUser = async (req, res, next) => {
     next(error);
   }
 };
+
+// Forgot Password
+export const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+
+  try {
+    const user = await findUserByEmail(email);
+
+    if (!user) {
+      throw new ApiError(404, "Email not found");
+    }
+
+    // send reset password email
+    const mailResult = await sendResetPasswordEmail(user.email, user._id);
+
+    if (!mailResult) {
+      throw new ApiError(500, "Failed to send reset password email");
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Reset password email sent successfully"));
+
+  } catch (error) {
+    console.log("forgotPassword controller error: ", error);
+    next(error);
+  }
+}
+
+// Reset Password
+export const resetPassword = async (req, res, next) => {
+
+  try {
+    const { token, password } = req.body;
+
+    // verify the token
+    const decoded = jwt.verify(token, process.env.PASSWORD_RESET_SECRET);
+    const user = await User.findById(decoded.id);
+    
+    if(!user) {
+      throw new ApiError(400, "Invalid token");
+    }
+
+    // hash the password
+    const hashedPassword = await hashPassword(password);
+
+    // update the password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Password reset successfully"));
+    
+  } catch (error) {
+    console.log("resetPassword controller error: ", error);
+    next(error);
+  }
+
+}
 
 // Logout User
 export const logoutUser = async (req, res) => {
