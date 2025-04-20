@@ -2,9 +2,9 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET =  "supersecret";
 
-export const generateAccessToken = (id, fullName, username, email) => {
+export const generateAccessToken = (id, fullName, email) => {
     const accessToken = jwt.sign({
-        id, fullName, username, email
+        id, fullName, email
     },
     JWT_SECRET,
     {
@@ -13,6 +13,17 @@ export const generateAccessToken = (id, fullName, username, email) => {
 
     return accessToken;
 }
+// export const generateAccessToken = (id, fullName, username, email) => {
+//     const accessToken = jwt.sign({
+//         id, fullName, username, email
+//     },
+//     JWT_SECRET,
+//     {
+//         expiresIn: "1d"
+//     })
+
+//     return accessToken;
+// }
 
 export const generateRefreshToken = (id) => {
 

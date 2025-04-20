@@ -133,7 +133,7 @@ export const loginUser = async (req, res, next) => {
     const accessToken = generateAccessToken(
       user._id,
       user.fullName,
-      user.username,
+      // user.username,
       user.email
     );
     const refreshToken = generateRefreshToken(user._id);
