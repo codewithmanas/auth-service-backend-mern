@@ -9,14 +9,14 @@ if (!process.env.JWT_SECRET) {
 }
 
 export const sendVerificationEmail = async (email, id) => {
-  const token = jwt.sign(
+  const emailVerificationToken = jwt.sign(
     { id: id },
     process.env.JWT_SECRET,
     { expiresIn: "15m" } // short lifespan for security
   );
 
   // temporary approach
-  const verificationLink = `${FRONTEND_BASE_URL}/verify-email/?token=${token}`;
+  const verificationLink = `${FRONTEND_BASE_URL}/verify-email/?token=${emailVerificationToken}`;
   // const verificationOTP = "123456";
 
   const mailOptions = {
@@ -36,11 +36,12 @@ export const sendVerificationEmail = async (email, id) => {
 
     await transporter.sendMail(mailOptions);
 
-    console.log("Successfully sent verification email");
+    // console.log("Successfully sent verification email");
     return true;
 
   } catch (error) {
-    console.error("SMTP connection failed", error);
-    return false;
+    // console.error("SMTP connection failed", error);
+    // return false;
+    throw error;
   }
 };

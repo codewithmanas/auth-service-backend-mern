@@ -16,11 +16,17 @@ import jwt from "jsonwebtoken";
 export const registerUser = async (req, res, next) => {
   // const { fullName, username, email, password } = req.body;
   try {
-
     const { fullName, email, password } = req.body;
 
     if (!fullName || !email || !password) {
-      throw new ApiError(400, "Missing fullName, email or password");
+      throw new ApiError(400, "missing full name, email or password");
+    }
+
+    // validate the email
+    // TODO: for production we need to express-validator
+    const isEmailValid = /\S+@\S+\.\S+/.test(email);
+    if (!isEmailValid) {
+      throw new ApiError(400, "Invalid email address");
     }
 
     // find the user if exist
@@ -38,11 +44,22 @@ export const registerUser = async (req, res, next) => {
     const newUser = await createUser(fullName, email, hashedPassword);
 
     // send verification email
-    const mailResult = await sendVerificationEmail(newUser.email, newUser._id);
+    // This will block the request until the email is sent
+    // const mailResult = await sendVerificationEmail(newUser.email, newUser._id);
 
-    if (!mailResult) {
-      throw new ApiError(500, "Failed to send verification email");
-    }
+    // if (!mailResult) {
+    //   throw new ApiError(500, "Failed to send verification email");
+    // }
+
+    // So let make it async and run it in the background
+    // This is temporary approach
+    // TODO: for production we need to use Queue System like BULLMQ
+    sendVerificationEmail(newUser.email, newUser._id)
+    .then(() => {
+      console.log("Successfully sent verification email");
+    }).catch((error) => {
+      console.log("Failed to send verification email", error);
+    })
 
     const safeUser = {
       fullName: newUser.fullName,
@@ -51,12 +68,11 @@ export const registerUser = async (req, res, next) => {
 
     const response = new ApiResponse(
       200,
-      "User registered successfully",
+      "User registered successfully, please check your email.",
       safeUser
     );
 
     return res.status(200).json(response);
-
   } catch (error) {
     console.log("register controller error: ", error);
     // return res.status(500).json("Internal Server Error");
@@ -66,9 +82,7 @@ export const registerUser = async (req, res, next) => {
 
 // Verify Email
 export const verifyEmail = async (req, res, next) => {
-  
   try {
-
     const token = req.query.token;
 
     if (!token) {
@@ -91,7 +105,6 @@ export const verifyEmail = async (req, res, next) => {
     }
 
     if (user.emailVerified) {
-
       return res
         .status(200)
         .json(new ApiResponse(200, "Email already verified"));
@@ -110,8 +123,6 @@ export const verifyEmail = async (req, res, next) => {
 
 // Login User
 export const loginUser = async (req, res, next) => {
- 
-
   try {
     const { email, password } = req.body;
 
@@ -188,7 +199,7 @@ export const loginUser = async (req, res, next) => {
     res.cookie("accessToken", accessToken, {
       ...cookieOptions,
       maxAge: 24 * 60 * 60 * 1000,
-    }); // 1 day or 24 hours 
+    }); // 1 day or 24 hours
 
     res.cookie("refreshToken", refreshToken, {
       ...cookieOptions,
@@ -212,9 +223,7 @@ export const loginUser = async (req, res, next) => {
 
 // Forgot Password
 export const forgotPassword = async (req, res, next) => {
-
   try {
-
     const { email } = req.body;
 
     if (!email) {
