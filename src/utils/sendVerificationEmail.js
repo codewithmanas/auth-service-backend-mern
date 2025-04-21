@@ -4,14 +4,14 @@ import { transporter } from "../configs/mailHandler.js";
 import { FRONTEND_BASE_URL } from "../constant.js";
 import jwt from "jsonwebtoken";
 
-if (!process.env.EMAIL_VERIFICATION_SECRET) {
-  throw new Error("EMAIL_VERIFICATION_SECRET is not set");
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set");
 }
 
 export const sendVerificationEmail = async (email, id) => {
   const token = jwt.sign(
     { id: id },
-    process.env.EMAIL_VERIFICATION_SECRET,
+    process.env.JWT_SECRET,
     { expiresIn: "15m" } // short lifespan for security
   );
 
@@ -29,6 +29,7 @@ export const sendVerificationEmail = async (email, id) => {
 
 
   // not recommended for production
+  // this is only for development
   try {
     await transporter.verify();
     console.log("SMTP connection successful");

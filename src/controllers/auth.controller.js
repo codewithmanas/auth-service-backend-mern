@@ -15,9 +15,14 @@ import jwt from "jsonwebtoken";
 // Register User
 export const registerUser = async (req, res, next) => {
   // const { fullName, username, email, password } = req.body;
-  const { fullName, email, password } = req.body;
-
   try {
+
+    const { fullName, email, password } = req.body;
+
+    if (!fullName || !email || !password) {
+      throw new ApiError(400, "Missing fullName, email or password");
+    }
+
     // find the user if exist
     const user = await findUserByEmail(email);
 
@@ -49,6 +54,7 @@ export const registerUser = async (req, res, next) => {
       "User registered successfully",
       safeUser
     );
+
     return res.status(200).json(response);
 
   } catch (error) {
@@ -60,14 +66,16 @@ export const registerUser = async (req, res, next) => {
 
 // Verify Email
 export const verifyEmail = async (req, res, next) => {
-  const token = req.query.token;
-
+  
   try {
+
+    const token = req.query.token;
+
     if (!token) {
       throw new ApiError(400, "Token not provided");
     }
 
-    const decoded = jwt.verify(token, process.env.EMAIL_VERIFICATION_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     if (!decoded) {
       console.log("Invalid or expired token", decoded);
@@ -78,18 +86,15 @@ export const verifyEmail = async (req, res, next) => {
 
     const user = await User.findById(userId);
 
-    // console.log("user found on verify: ", user);
-
     if (!user) {
       throw new ApiError(404, "User not found");
     }
 
     if (user.emailVerified) {
-      // console.log("Email already verified", user.emailVerified);
 
       return res
-      .status(200)
-      .json(new ApiResponse(200, "Email already verified"));
+        .status(200)
+        .json(new ApiResponse(200, "Email already verified"));
     }
 
     user.emailVerified = true;
@@ -98,7 +103,6 @@ export const verifyEmail = async (req, res, next) => {
     return res
       .status(200)
       .json(new ApiResponse(200, "Email verified successfully"));
-
   } catch (err) {
     next(err);
   }
@@ -106,9 +110,15 @@ export const verifyEmail = async (req, res, next) => {
 
 // Login User
 export const loginUser = async (req, res, next) => {
-  const { email, password } = req.body;
+ 
 
   try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      throw new ApiError(400, "Missing email or password");
+    }
+
     // find the user by email if exist
     const user = await findUserByEmail(email);
 
@@ -168,10 +178,18 @@ export const loginUser = async (req, res, next) => {
       sameSite: "strict",
     };
 
+    // For Development
+    // const cookieOptions = {
+    //   httpOnly: true,
+    //   secure: false,
+    //   sameSite: "lax",
+    // };
+
     res.cookie("accessToken", accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
-    }); // 15 minutes
+      maxAge: 24 * 60 * 60 * 1000,
+    }); // 1 day or 24 hours 
+
     res.cookie("refreshToken", refreshToken, {
       ...cookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -181,6 +199,7 @@ export const loginUser = async (req, res, next) => {
       accessToken,
       refreshToken,
     });
+
     return res.status(200).json(response);
 
     // return res.status(200).json({ message: "Logged in Successfully", accessToken: accessToken, refreshToken: refreshToken});
@@ -193,9 +212,15 @@ export const loginUser = async (req, res, next) => {
 
 // Forgot Password
 export const forgotPassword = async (req, res, next) => {
-  const { email } = req.body;
 
   try {
+
+    const { email } = req.body;
+
+    if (!email) {
+      throw new ApiError(400, "Email not provided");
+    }
+
     const user = await findUserByEmail(email);
 
     if (!user) {
@@ -212,24 +237,26 @@ export const forgotPassword = async (req, res, next) => {
     return res
       .status(200)
       .json(new ApiResponse(200, "Reset password email sent successfully"));
-
   } catch (error) {
-    console.log("forgotPassword controller error: ", error);
+    console.log("forgot password controller error: ", error);
     next(error);
   }
-}
+};
 
 // Reset Password
 export const resetPassword = async (req, res, next) => {
-
   try {
     const { token, password } = req.body;
 
+    if (!token || !password) {
+      throw new ApiError(400, "Missing token or password");
+    }
+
     // verify the token
-    const decoded = jwt.verify(token, process.env.PASSWORD_RESET_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
-    
-    if(!user) {
+
+    if (!user) {
       throw new ApiError(400, "Invalid token");
     }
 
@@ -242,14 +269,22 @@ export const resetPassword = async (req, res, next) => {
 
     return res
       .status(200)
-      .json(new ApiResponse(200, "Password reset successfully"));
-    
+      .json(new ApiResponse(200, "reset password successfully"));
   } catch (error) {
-    console.log("resetPassword controller error: ", error);
+    console.log("reset password controller error: ", error);
     next(error);
   }
+};
 
-}
+// Get Current User
+export const getCurrentUser = async (req, res) => {
+  // You can also fetch full user data from DB using req.user.id if needed
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "current user data fetched successfully", req.user)
+    );
+};
 
 // Logout User
 export const logoutUser = async (req, res) => {
@@ -260,11 +295,7 @@ export const logoutUser = async (req, res) => {
       import cookieParser from 'cookie-parser';
       app.use(cookieParser());
 
-      */
-
-  const refreshToken = req.cookies.refreshToken;
-
-  console.log("refreshToken: ", refreshToken);
+  */
 
   res.clearCookie("accessToken", {
     httpOnly: true,

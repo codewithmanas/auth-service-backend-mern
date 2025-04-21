@@ -3,14 +3,14 @@ import jwt from "jsonwebtoken";
 import { FRONTEND_BASE_URL } from "../constant.js";
 import { transporter } from "../configs/mailHandler.js";
 
-if(!process.env.PASSWORD_RESET_SECRET) {
-    throw new Error("PASSWORD_RESET_SECRET is not set");
+if(!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not set");
 }
 
 export const sendResetPasswordEmail = async (email, id) => {
   const token = jwt.sign(
     { id: id },
-    process.env.PASSWORD_RESET_SECRET,
+    process.env.JWT_SECRET,
     { expiresIn: "15m" } // short lifespan for security
   );
 

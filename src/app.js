@@ -11,6 +11,7 @@ const app = express();
 app.use(
   cors({
     origin: FRONTEND_BASE_URL,
+    // origin: "*",
     credentials: true,
   })
 );
@@ -28,6 +29,11 @@ app.use("/api/auth", authRoute);
 app.get("/health", (req, res) => {
   res.send("App is healthy");
 });
+
+// TODO: need to implement error handling of not found routes
+// app.use((req, res) => {
+//   res.status(404).json({ message: "Route not found" });
+// });
 
 
 // Global Error Handling Middleware

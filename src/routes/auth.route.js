@@ -1,12 +1,14 @@
 import express from "express";
 import {
   forgotPassword,
+  getCurrentUser,
   loginUser,
   logoutUser,
   registerUser,
   resetPassword,
   verifyEmail,
 } from "../controllers/auth.controller.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
@@ -34,7 +36,10 @@ router.post("/forgot-password", forgotPassword);
 // reset password
 router.post("/reset-password", resetPassword);
 
+// get current user
+router.get("/current-user", authenticate, getCurrentUser);
+
 // logout
-router.post("/logout", logoutUser);
+router.post("/logout", authenticate, logoutUser);
 
 export default router;
