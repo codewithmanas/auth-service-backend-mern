@@ -9,6 +9,7 @@ import {
   verifyEmail,
 } from "../controllers/auth.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
+import { registerLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.get("/users", (req, res) => {
 });
 
 // register
-router.post("/register", registerUser);
+router.post("/register", registerLimiter, registerUser);
 
 // verify email
 router.get("/verify-email", verifyEmail);
