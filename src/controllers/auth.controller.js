@@ -8,6 +8,7 @@ import {
   generateRefreshToken,
 } from "../utils/generateAccessAndRefreshToken.js";
 import { hashPassword } from "../utils/hashPassword.js";
+import { rateLimiterByEmail } from "../utils/rateLimiters.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 import jwt from "jsonwebtoken";
@@ -16,7 +17,12 @@ import jwt from "jsonwebtoken";
 export const registerUser = async (req, res, next) => {
   // const { fullName, username, email, password } = req.body;
   try {
+
     const { fullName, email, password } = req.body;
+
+    // Check email rate limit
+    await rateLimiterByEmail.consume(email);
+
 
     if (!fullName || !email || !password) {
       throw new ApiError(400, "missing full name, email or password");
