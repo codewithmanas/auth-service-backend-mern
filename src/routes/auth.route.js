@@ -9,8 +9,7 @@ import {
   verifyEmail,
 } from "../controllers/auth.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
-import { emailRateLimitMiddleware } from "../middlewares/rateLimiter.middleware.js";
-// import { registerLimiter } from "../middlewares/rateLimiter.middleware.js";
+import { emailRateLimitMiddleware, ipRateLimitMiddleware } from "../middlewares/rateLimiter.middleware.js";
 
 const router = express.Router();
 
@@ -24,7 +23,8 @@ router.get("/users", (req, res) => {
 });
 
 // register
-router.post("/register", emailRateLimitMiddleware, registerUser);
+// ipRateLimitMiddleware not working for now
+router.post("/register", ipRateLimitMiddleware, emailRateLimitMiddleware, registerUser);
 
 // verify email
 router.get("/verify-email", verifyEmail);

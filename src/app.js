@@ -19,6 +19,11 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// This is needed to get the ip address of the client
+// if app is running behind a proxy like nginx, cloudflare and vercel
+// TODO: only working in development, fix later
+// app.set('trust proxy', true);
+
 // routes
 app.use("/api/auth", authRoute);
 
