@@ -1,12 +1,15 @@
 import rateLimit from "express-rate-limit";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import {
-  loginRateLimiterByEmail,
+  // loginRateLimiterByEmail,
+  loginRateLimiterByEmailDelay,
   loginRateLimiterByIP,
   rateLimiterByEmail,
   rateLimiterByIP,
   rateLimiterByVerifyToken,
 } from "../utils/rateLimiters.js";
+// import { findUserByEmail } from "../services/auth.service.js";
+// import { comparePassword } from "../utils/comparePassword.js";
 
 // 5 requests per 15 mins per IP
 export const registerLimiter = rateLimit({
@@ -109,23 +112,37 @@ export const loginIpRateLimiterMiddleware = async (req, res, next) => {
 };
 
 export const loginEmailRateLimiterMiddleware = async (req, res, next) => {
-  const email = req.body.email;
+  const { email, password } = req.body;
 
   if (!email) {
     return res.status(400).json(new ApiResponse(400, "Email is required"));
   }
 
   try {
-    await loginRateLimiterByEmail.consume(email.toLowerCase());
+    await loginRateLimiterByEmailDelay.consume(email.toLowerCase());
+
+      // Check delay status
+      const rateLimiterRes = await loginRateLimiterByEmailDelay.get(email.toLowerCase());
+
+      if (rateLimiterRes !== null && rateLimiterRes.consumedPoints > 2) {
+        let delaySec = Math.pow(2, rateLimiterRes.consumedPoints - 2); // exponential backoff
+        res.set('Retry-After', String(delaySec));
+
+        // Attach to req for access in controller
+        req.retryAfter = delaySec;
+
+      }
+
     next();
   } catch (error) {
     console.log("login email rate limit middleware error: ", error);
+
     return res
       .status(429)
       .json(
         new ApiResponse(
           429,
-          "Too many login attempts for this email. Try again later."
+          `Too many login attempts for this email. Try after ${Math.round(error?.msBeforeNext / (1000 * 60))} minutes.`
         )
       );  
   }

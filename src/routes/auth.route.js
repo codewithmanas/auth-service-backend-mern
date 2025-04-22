@@ -43,7 +43,7 @@ router.get("/verify-email", verifyTokenRateLimitMiddleware, verifyEmail);
 // login
 router.post(
   "/login",
-  loginIpRateLimiterMiddleware,
+  // loginIpRateLimiterMiddleware,
   loginEmailRateLimiterMiddleware,
   loginUser
 );

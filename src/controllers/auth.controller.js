@@ -8,6 +8,7 @@ import {
   generateRefreshToken,
 } from "../utils/generateAccessAndRefreshToken.js";
 import { hashPassword } from "../utils/hashPassword.js";
+import { loginRateLimiterByEmailDelay } from "../utils/rateLimiters.js";
 import { sendResetPasswordEmail } from "../utils/sendResetPasswordEmail.js";
 import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 import jwt from "jsonwebtoken";
@@ -134,9 +135,19 @@ export const loginUser = async (req, res, next) => {
     // find the user by email if exist
     const user = await findUserByEmail(email);
 
-    if (!user) {
+    if (!user || !(await comparePassword(password, user.password))) {
       // return res.status(401).json("User with email or username does not exist");
-      console.log("User with email does not exist");
+      console.log("User with email does not exist, or password is incorrect");
+
+      
+
+      let delaySec = req.retryAfter;
+
+      if(delaySec) {
+        return res.status(429)
+        .json(new ApiResponse(429, `Too many failed attempts. Please wait ${delaySec} seconds before retrying.`))
+      }
+
       throw new ApiError(401, "Invalid Credentials");
     }
 
@@ -144,13 +155,8 @@ export const loginUser = async (req, res, next) => {
       throw new ApiError(403, "Please verify your email before logging in");
     }
 
-    // compare the password
-    const isMatch = await comparePassword(password, user.password);
-
-    if (!isMatch) {
-      // return res.status(401).json("Invalid Credentials");
-      throw new ApiError(401, "Invalid Credentials");
-    }
+      // Reset limiter on successful login
+      await loginRateLimiterByEmailDelay.delete(email.toLowerCase());
 
     const accessToken = generateAccessToken(
       user._id,
