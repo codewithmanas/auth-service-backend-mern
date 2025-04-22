@@ -1,6 +1,6 @@
 import rateLimit from "express-rate-limit";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { rateLimiterByEmail, rateLimiterByIP } from "../utils/rateLimiters.js";
+import { rateLimiterByEmail, rateLimiterByIP, rateLimiterByVerifyToken } from "../utils/rateLimiters.js";
 
 // 5 requests per 15 mins per IP
 export const registerLimiter = rateLimit({
@@ -44,6 +44,24 @@ export const ipRateLimitMiddleware = async (req, res, next) => {
         } catch (error) {
             console.log("ip rate limit middleware error: ", error);
             return res.status(429).json(new ApiResponse(429, "Too many registration attempts for this IP. Try again later."));
+        }
+}
+
+// Rate Limiter Middleware by Verify Token
+export const verifyTokenRateLimitMiddleware = async (req, res, next) => {
+          const { token } = req.query;
+
+          if (!token) {
+            return res.status(400).json(new ApiResponse(400, "Missing token"));
+          }
+
+        try {
+            await rateLimiterByVerifyToken.consume(token);
+            next();
+            
+        } catch (error) {
+            console.log("verify token rate limit middleware error: ", error);
+            return res.status(429).json(new ApiResponse(429, "Too many registration attempts for this token. Try again later."));
         }
 }
 

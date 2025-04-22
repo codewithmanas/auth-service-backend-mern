@@ -24,3 +24,11 @@ export const rateLimiterByEmail = new RateLimiterRedis({
     points: 5,
     duration: 15 * 60 // 15 mins
 })
+
+// Verify Token Based:
+export const rateLimiterByVerifyToken = new RateLimiterRedis({
+    storeClient: redisClient,
+    keyPrefix: 'rl_verify_token',
+    points: 5,           // 5 attempts
+    duration: 15 * 60,   // 15 minutes — same as token expiry
+  })

@@ -9,7 +9,11 @@ import {
   verifyEmail,
 } from "../controllers/auth.controller.js";
 import { authenticate } from "../middlewares/auth.middleware.js";
-import { emailRateLimitMiddleware, ipRateLimitMiddleware } from "../middlewares/rateLimiter.middleware.js";
+import {
+  emailRateLimitMiddleware,
+  ipRateLimitMiddleware,
+  verifyTokenRateLimitMiddleware,
+} from "../middlewares/rateLimiter.middleware.js";
 
 const router = express.Router();
 
@@ -24,10 +28,15 @@ router.get("/users", (req, res) => {
 
 // register
 // ipRateLimitMiddleware not working for now
-router.post("/register", ipRateLimitMiddleware, emailRateLimitMiddleware, registerUser);
+router.post(
+  "/register",
+  ipRateLimitMiddleware,
+  emailRateLimitMiddleware,
+  registerUser
+);
 
 // verify email
-router.get("/verify-email", verifyEmail);
+router.get("/verify-email", verifyTokenRateLimitMiddleware, verifyEmail);
 
 // login
 router.post("/login", loginUser);
