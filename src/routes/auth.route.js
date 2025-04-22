@@ -12,6 +12,8 @@ import { authenticate } from "../middlewares/auth.middleware.js";
 import {
   emailRateLimitMiddleware,
   ipRateLimitMiddleware,
+  loginEmailRateLimiterMiddleware,
+  loginIpRateLimiterMiddleware,
   verifyTokenRateLimitMiddleware,
 } from "../middlewares/rateLimiter.middleware.js";
 
@@ -39,7 +41,12 @@ router.post(
 router.get("/verify-email", verifyTokenRateLimitMiddleware, verifyEmail);
 
 // login
-router.post("/login", loginUser);
+router.post(
+  "/login",
+  loginIpRateLimiterMiddleware,
+  loginEmailRateLimiterMiddleware,
+  loginUser
+);
 
 // forgot password
 router.post("/forgot-password", forgotPassword);

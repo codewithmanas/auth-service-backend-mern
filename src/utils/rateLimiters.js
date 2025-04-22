@@ -6,21 +6,19 @@ const redisClient = new Redis(); // default: 127.0.0.1:6379
 // host: 'localhost', // or container IP / redis service name
 // port: 6379,
 
-
+// For Register Limiter
 // IP-based: Max 5 registration attempts per IP in 15 minutes
 export const rateLimiterByIP = new RateLimiterRedis({
     storeClient: redisClient,
-    keyPrefix: "rl_ip",
+    keyPrefix: "register_rl_ip",
     points: 5,
     duration: 15 * 60 // 15 mins
 })
 
-
-
 // Email-based: Max 5 registration attempts per email in 15 minutes
 export const rateLimiterByEmail = new RateLimiterRedis({
     storeClient: redisClient,
-    keyPrefix: "rl_email",
+    keyPrefix: "register_rl_email",
     points: 5,
     duration: 15 * 60 // 15 mins
 })
@@ -32,3 +30,21 @@ export const rateLimiterByVerifyToken = new RateLimiterRedis({
     points: 5,           // 5 attempts
     duration: 15 * 60,   // 15 minutes — same as token expiry
   })
+
+
+// For Login Limiter
+// IP-based: Max 10 login attempts per IP in 15 minutes
+export const loginRateLimiterByIP = new RateLimiterRedis({
+    storeClient: redisClient,
+    keyPrefix: "login_rl_ip",
+    points: 10,
+    duration: 15 * 60 // 15 mins
+})
+
+// Email-based: Max 5 login attempts per email in 15 minutes
+export const loginRateLimiterByEmail = new RateLimiterRedis({
+    storeClient: redisClient,
+    keyPrefix: "login_rl_email",
+    points: 5,
+    duration: 15 * 60 // 15 mins
+})
