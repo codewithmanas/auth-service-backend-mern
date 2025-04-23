@@ -2,6 +2,9 @@ import mongoose, { Schema } from "mongoose";
 
 const userSchema = new Schema(
   {
+    googleId: {
+      type: String,
+    },
     fullName: {
       type: String,
       required: true,
@@ -20,7 +23,10 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        // Only required if not using Google login
+        return !this.googleId;
+      },
     },
     refreshToken: {
       type: String,
